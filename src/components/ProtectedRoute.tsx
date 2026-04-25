@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   // If no token, instantly redirect them to the login page
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // If they have a token, let them see the page!
