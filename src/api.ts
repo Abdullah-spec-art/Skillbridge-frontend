@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // 1. Create the base instance
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000', // Change this once when you deploy to production!
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
+  // baseURL: 'http://127.0.0.1:8000', // Change this once when you deploy to production!
 });
 
 // 2. Add a Request Interceptor
