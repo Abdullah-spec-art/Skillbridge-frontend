@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import AnalyzerLoading from './AnalyzerLoading';
+import SEO from './SEO';
 
 interface MissingSkill { skill: string; reason: string; }
 interface AIFeedback { match_percentage: number; executive_summary: string; missing_skills: MissingSkill[]; }
@@ -121,6 +122,11 @@ export default function UploadDashboard() {
   };
 
   return (
+    <>
+    <SEO 
+        title="My Analysis" 
+        description="SkillBridge AI Dashboard" 
+      />
     <div className="min-h-screen bg-slate-50 p-8 text-slate-900 pb-20">
       
       <div className="max-w-5xl mx-auto mb-10 mt-4">
@@ -192,5 +198,6 @@ export default function UploadDashboard() {
       </div>
 
     </div>
+    </>
   );
 }

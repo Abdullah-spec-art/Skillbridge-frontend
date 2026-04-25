@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import api from '../api'; // <-- Changed: Using your new centralized API instance
+import SEO from './SEO';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -62,6 +63,11 @@ export default function LoginPage() {
   };
 
   return (
+    <>
+    <SEO 
+        title="Login" 
+        description="Sign in to SkillBridge AI to analyze your resume and find your perfect job match." 
+      />
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
         
@@ -121,5 +127,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
