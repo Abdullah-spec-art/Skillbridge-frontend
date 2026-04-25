@@ -45,9 +45,15 @@ export default function LoginPage() {
         email,
         password
       });
-      
-      localStorage.setItem('token', response.data.access_token);
-      navigate('/'); // Teleport to dashboard
+      if (response.data.message === "Email not verified. A new OTP has been sent to your email.") {
+        navigate('/verify-otp', { state: { email: email } });
+        return; // Stop running this function
+      }
+      const token = response.data.data.access_token;
+      if (token) {
+        localStorage.setItem('token', token);
+        navigate('/'); 
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || "Invalid credentials.");
     } finally {

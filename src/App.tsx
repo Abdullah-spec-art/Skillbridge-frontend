@@ -35,7 +35,7 @@ export default function App() {
             
             {/* 3. PROTECTED ROUTES (Must be logged in) */}
             
-            <Route path="/profile" element={
+            <Route path="/me/profile" element={
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>

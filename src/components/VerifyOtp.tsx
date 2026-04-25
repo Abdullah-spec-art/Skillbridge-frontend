@@ -28,9 +28,11 @@ export default function VerifyOtp() {
       // Adjust this URL to match your FastAPI OTP verification route
       const response = await api.post('/auth/verify-otp', { email, otp });
 
+      const token = response.data.data?.access_token;
+
       // Assuming successful verification returns the JWT token
-      if (response.data.access_token) {
-        localStorage.setItem('token', response.data.access_token);
+      if (token) {
+        localStorage.setItem('token', token);
         navigate('/'); // Take them straight to the dashboard!
       } else {
         // Fallback if your API requires them to log in separately after verifying
