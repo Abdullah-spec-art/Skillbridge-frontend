@@ -23,7 +23,7 @@ export default function UploadDashboard() {
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   
   // State for Scans (Defaults to 3 until the API loads)
-  const [scansRemaining, setScansRemaining] = useState<number>(3);
+  const [scansRemaining, setScansRemaining] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
