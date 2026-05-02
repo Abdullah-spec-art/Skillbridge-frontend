@@ -20,9 +20,9 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const isLoggedInFlag = !!localStorage.getItem('is_logged_in');
     
-    if (token) {
+    if (isLoggedInFlag) {
       setIsLoggedIn(true);
       
       api.get('/auth/me/profile')
@@ -59,8 +59,14 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token'); 
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error("Logout error", err);
+    }
+    // Clear the localStorage flag
+    localStorage.removeItem('is_logged_in');
     setIsLoggedIn(false);
     setUserProfile(null);
     setIsDropdownOpen(false); 
@@ -121,17 +127,26 @@ export default function Navbar() {
             <div className="flex items-center gap-3 sm:gap-4">
               {isLoggedIn ? (
                 <>
-                  <div 
-                    className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold border shadow-sm transition-colors ${
-                      (userProfile?.scans_remaining ?? 0) > 0 
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
-                        : 'bg-red-50 border-red-200 text-red-700'
-                    }`}
-                    title="Remaining weekly scans"
-                  >
-                    <span>⚡</span>
-                    <span>{userProfile?.scans_remaining ?? 0}</span>
-                  </div>
+                  {userProfile ? (
+                    <div 
+                      className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold border shadow-sm transition-colors ${
+                        userProfile.scans_remaining > 0 
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                          : 'bg-red-50 border-red-200 text-red-700'
+                      }`}
+                      title="Remaining weekly scans"
+                    >
+                      <span>⚡</span>
+                      <span>{userProfile.scans_remaining}</span>
+                    </div>
+                  ) : (
+                    <div className="hidden sm:flex items-center justify-center w-12 h-7 bg-slate-50 border border-slate-200 rounded-md shadow-sm">
+                      <svg className="animate-spin h-3 w-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
 
                   <Link 
                     to="/" 
@@ -166,7 +181,7 @@ export default function Navbar() {
                       </div>
 
                       <div className="sm:hidden px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-100 mb-1 flex items-center gap-2">
-                        <span>⚡</span> {userProfile?.scans_remaining ?? 0} Scans Left
+                        <span>⚡</span> {userProfile ? `${userProfile.scans_remaining} Scans Left` : 'Loading...'}
                       </div>
 
                       <Link 

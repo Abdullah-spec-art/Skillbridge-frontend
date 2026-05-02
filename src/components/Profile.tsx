@@ -49,8 +49,13 @@ export default function Profile() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error("Logout error", err);
+    }
+    localStorage.removeItem('is_logged_in');
     navigate('/login');
   };
 

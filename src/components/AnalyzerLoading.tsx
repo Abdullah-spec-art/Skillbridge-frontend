@@ -22,17 +22,20 @@ export default function AnalyzerLoading({ isAnalyzing, isSuccess, isDisabled, on
 
   // --- THE STEP TIMER LOGIC ---
   useEffect(() => {
-    let interval: any;
+    let timeout: any;
     if (isAnalyzing && !isSuccess) {
-      interval = setInterval(() => {
-        setStep((prev) => (prev < 3 ? prev + 1 : prev)); // Move to "Auto-saved"
-      }, 2500); 
+      // Stay on step 2 ("Model is running") while the API is pending
+      setStep(2); 
     } else if (isSuccess) {
-      setStep(4); // Move to "Redirecting"
+      // API returned! Quickly sequence the final steps before the redirect happens
+      setStep(3); // "Auto-saved"
+      timeout = setTimeout(() => {
+        setStep(4); // "Redirecting"
+      }, 700); 
     } else {
       setStep(2); // Reset
     }
-    return () => clearInterval(interval);
+    return () => clearTimeout(timeout);
   }, [isAnalyzing, isSuccess]);
 
   const steps = [

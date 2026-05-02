@@ -15,10 +15,10 @@ export default function SignupPage() {
     onSuccess: async (tokenResponse) => {
       try {
         setIsLoading(true);
-        const response = await api.post('/auth/google', {
+        await api.post('/auth/google', {
           google_token: tokenResponse.access_token 
         });
-        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('is_logged_in', 'true');
         navigate('/');
       } catch (error) {
         console.error("Backend rejected the Google token", error);

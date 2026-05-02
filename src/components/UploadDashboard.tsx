@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import AnalyzerLoading from './AnalyzerLoading';
 import SEO from './SEO';
+import { validateJobDescription } from '../utils/validation';
 
 interface MissingSkill { skill: string; reason: string; }
 interface AIFeedback { match_percentage: number; executive_summary: string; missing_skills: MissingSkill[]; }
@@ -21,15 +22,16 @@ export default function UploadDashboard() {
   
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // State for Scans (Defaults to 3 until the API loads)
-  const [scansRemaining, setScansRemaining] = useState<number>(0);
+  // State for Scans (Defaults to null until the API loads)
+  const [scansRemaining, setScansRemaining] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  // Check if the user is currently logged in
-  const isAuthenticated = !!localStorage.getItem('token');
+  // Check if the user is currently logged in via the localStorage flag
+  const isAuthenticated = !!localStorage.getItem('is_logged_in');
 
   // Fetch the user's real scan count when the page loads
   useEffect(() => {
@@ -58,16 +60,26 @@ export default function UploadDashboard() {
   }, [isAuthenticated]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     if (e.target.files && e.target.files.length > 0) setSelectedFile(e.target.files[0]);
   };
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setError(null);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) setSelectedFile(e.dataTransfer.files[0]);
   };
 
   const handleAnalyze = async () => {
+    setError(null);
     if (!selectedFile || !jobDescription) return;
+
+    // Run Frontend Validation to prevent junk data from costing API credits
+    const validation = validateJobDescription(jobDescription);
+    if (!validation.isValid) {
+      setError(validation.error || "Invalid job description.");
+      return;
+    }
 
     if (!isAuthenticated) {
       localStorage.setItem('pendingJobDescription', jobDescription);
@@ -98,22 +110,22 @@ export default function UploadDashboard() {
         navigate(`/results/${response.data.id}`);
       }, 1500);
 
-    } catch (error: any) {
-      console.error("Analysis failed:", error);
+    } catch (err: any) {
+      console.error("Analysis failed:", err);
       
       // Catches the specific 403 Out of Scans error from the FastAPI Gatekeeper
-      if (error.response && error.response.status === 403) {
-        alert("You are out of scans! Your account will be replenished next week.");
+      if (err.response && err.response.status === 403) {
+        setError("You are out of scans! Your account will be replenished next week.");
         setScansRemaining(0); // Force sync UI to 0
       }
-      else if (error.response && error.response.status === 429) {
-        alert("The AI engine is currently at maximum capacity. Please wait 1 minute and try again.");
+      else if (err.response && err.response.status === 429) {
+        setError("The AI engine is currently at maximum capacity. Please wait 1 minute and try again.");
       } 
-      else if (error.response && error.response.data && error.response.data.detail) {
-        alert(error.response.data.detail);
+      else if (err.response && err.response.data && err.response.data.detail) {
+        setError(err.response.data.detail);
       } 
       else {
-        alert("Analysis failed. The server might be busy or unreachable. Please try again.");
+        setError("Analysis failed. The server might be busy or unreachable. Please try again.");
       }
 
       setIsAnalyzing(false); 
@@ -138,12 +150,23 @@ export default function UploadDashboard() {
               {/* Only render the badge if they are logged in */}
               {isAuthenticated && (
                 <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm transition-colors ${
+                  scansRemaining === null ? 'bg-slate-50 border-slate-200 text-slate-500' :
                   scansRemaining > 0 
                     ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
                     : 'bg-red-50 border-red-200 text-red-700'
                 }`}>
                   <span>⚡</span>
-                  <span>{scansRemaining} Scans Left</span>
+                  {scansRemaining === null ? (
+                    <span className="flex items-center gap-1.5">
+                      <svg className="animate-spin h-3 w-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading...
+                    </span>
+                  ) : (
+                    <span>{scansRemaining} Scans Left</span>
+                  )}
                 </div>
               )}
             </div>
@@ -154,6 +177,13 @@ export default function UploadDashboard() {
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="max-w-5xl mx-auto mb-6 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl text-sm font-medium flex items-center gap-3 shadow-sm transition-all animate-in fade-in slide-in-from-top-4">
+          <svg className="w-6 h-6 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+          <p>{error}</p>
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column: Upload Resume */}
@@ -181,7 +211,10 @@ export default function UploadDashboard() {
             className="flex-grow w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none min-h-[280px] transition-all"
             placeholder="Paste the full job description here..."
             value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
+            onChange={(e) => {
+              setError(null);
+              setJobDescription(e.target.value);
+            }}
           ></textarea>
         </div>
       </div>
@@ -190,9 +223,9 @@ export default function UploadDashboard() {
         <AnalyzerLoading 
           isAnalyzing={isAnalyzing}
           isSuccess={isSuccess}
-          // Button is disabled if form is empty, OR if logged in with 0 scans.
+          // Button is disabled if form is empty, OR if logged in with 0 scans (but wait until scans are loaded).
           // Guests can still click it to get redirected to the signup page.
-          isDisabled={!selectedFile || jobDescription.length === 0 || (isAuthenticated && scansRemaining <= 0)}
+          isDisabled={!selectedFile || jobDescription.length === 0 || (isAuthenticated && scansRemaining !== null && scansRemaining <= 0)}
           onAnalyze={handleAnalyze}
         />
       </div>
